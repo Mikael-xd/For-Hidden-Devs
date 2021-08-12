@@ -1,0 +1,218 @@
+function MakeAnimation(Humanoid,AnimationID,AnimationName)
+	local NewAnimation = Instance.new("Animation",Humanoid)
+	NewAnimation.AnimationId = "rbxassetid://"..AnimationID
+	NewAnimation.Name = AnimationName
+	local NewAnimationLoad = Humanoid:LoadAnimation(NewAnimation)
+	return NewAnimation,NewAnimationLoad
+end
+
+function PartToRegion3(Part)
+	local RotatedRegion3 = require(game.ServerStorage.RotatedRegion3)
+	local Region = RotatedRegion3.new(Part.CFrame,Part.Size)
+	return Region
+end
+
+function RaycastSomething(StartPosition,EndPosition,Length,IgnoreList)
+	local start = StartPosition
+	local lookAt = EndPosition
+	local lengthInStuds = Length
+	local itemsToIgnore = IgnoreList or {}
+
+	local ray = Ray.new(start, (lookAt-start).Unit * lengthInStuds)
+	local part, position = workspace:FindPartOnRayWithIgnoreList(ray, itemsToIgnore)
+	return part,position
+end
+
+game.ReplicatedStorage.GameRemoteEvents.Gravity["Gravity Attract"].OnServerEvent:Connect(function(Player,Vall,Tool,Mouse,Key)
+	local Character = Player.Character
+	local Humanoid = Character.Humanoid
+	local HumanoidRootPart = Character.HumanoidRootPart
+	local Info = require(game.ServerStorage.GameInfo.GameInfoModule)
+	local InfoMove = Info.GetInfoFor(Tool.Name,Key)
+	local TS = game:GetService("TweenService")
+	
+	local FindTool = Character:FindFirstChild(Tool.Name) or Player.Backpack:FindFirstChild(Tool.Name)
+	
+	if Vall == "Hold" and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead and Character:FindFirstChild(Tool.Name) and Player.Stats:FindFirstChild(InfoMove.Stat).Value >= InfoMove.Requirements then
+		local HoldValue = Instance.new("BoolValue",Player)
+		HoldValue.Name = InfoMove.MoveName.." Hold"
+		
+		local GravityAttractStartAnimation,GravityAttractStartLoadAnimation = MakeAnimation(Humanoid,7236645453,"Gravity Attract Start")
+		GravityAttractStartLoadAnimation:Play()
+		GravityAttractStartLoadAnimation.Stopped:Wait()
+		
+		game.Debris:AddItem(GravityAttractStartAnimation,0.1)
+		
+		local GravityAttractHoldAnimation,GravityAttractHoldLoadAnimation = MakeAnimation(Humanoid,7236647215,"Gravity Attract Hold")
+		GravityAttractHoldLoadAnimation:Play()
+		
+		repeat wait() until Player:FindFirstChild(InfoMove.MoveName.." Hold") == nil
+		GravityAttractHoldLoadAnimation:Stop()
+		game.Debris:AddItem(GravityAttractHoldAnimation,0.1)
+	elseif Vall == "Release" and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead and FindTool and Player.Stats:FindFirstChild(InfoMove.Stat).Value >= InfoMove.Requirements then
+		if Player:FindFirstChild(InfoMove.MoveName.." Cooldown") == nil then
+			if Player:FindFirstChild(InfoMove.MoveName.." Hold") then
+				Player:FindFirstChild(InfoMove.MoveName.." Hold"):Destroy()
+			end
+
+			local CooldownValue = Instance.new("BoolValue",Player)
+			CooldownValue.Name = InfoMove.MoveName.." Cooldown"
+			game.Debris:AddItem(CooldownValue,InfoMove.Cooldown)
+			
+			local GravityAttractInAttackAnimation,GravityAttractInAttackLoadAnimation = MakeAnimation(Humanoid,7236655480,"Gravity Attract In Attack")
+			GravityAttractInAttackLoadAnimation:Play()
+			GravityAttractInAttackLoadAnimation.Stopped:Wait()
+			
+			game.Debris:AddItem(GravityAttractInAttackAnimation,0.1)
+			
+			local GravityAttractEndAnimation,GravityAttractEndLoadAnimation = MakeAnimation(Humanoid,7236657282,"Gravity Attract End")
+			GravityAttractEndLoadAnimation:Play()
+			
+			game.Debris:AddItem(GravityAttractEndAnimation,1.5)
+			
+			local Folder = Instance.new("Folder",workspace.Effects)
+			Folder.Name = InfoMove.MoveName..Player.Name
+			
+			local result,PositionToLook = RaycastSomething((HumanoidRootPart.CFrame).Position,(HumanoidRootPart.CFrame * CFrame.new(0,0,-100)).Position,100,{Character,workspace.Effects})
+			
+			local CurrentColor = "Pink"
+			local Range = 6
+
+			for i = 1, 30 do
+				if CurrentColor == "Pink" then
+					CurrentColor = "Black"
+
+					local SparkPart = game.ServerStorage.GameEffects.Gravity["Gravity Attract"]:FindFirstChild(CurrentColor):Clone()
+					SparkPart.Parent = Folder
+					SparkPart.Anchored = true
+
+					local rotation = SparkPart.CFrame - SparkPart.Position
+					SparkPart.CFrame = HumanoidRootPart.CFrame * CFrame.new(math.random(-Range, Range), math.random(-Range, Range), -3) * rotation
+					SparkPart.CFrame = SparkPart.CFrame * CFrame.Angles(0,0,0)
+
+					local result,SparkPositionFinal = RaycastSomething(SparkPart.Position,(SparkPart.CFrame * CFrame.new(0,0,-100)).Position,100,{Character,workspace.Effects})
+
+					local StartPosition = SparkPart.Position
+					SparkPart.Position = SparkPositionFinal
+
+					TS:Create(SparkPart,TweenInfo.new(0.5),{Position = StartPosition,Size = SparkPart.Size + Vector3.new(0,0,5)}):Play()
+					delay(0.4, function()
+						TS:Create(SparkPart,TweenInfo.new(0.1),{Transparency = 1}):Play()
+					end)
+				elseif CurrentColor == "Black" then
+					CurrentColor = "Pink"
+
+					local SparkPart = game.ServerStorage.GameEffects.Gravity["Gravity Attract"]:FindFirstChild(CurrentColor):Clone()
+					SparkPart.Parent = Folder
+					SparkPart.Anchored = true
+
+					local rotation = SparkPart.CFrame - SparkPart.Position
+					SparkPart.CFrame = HumanoidRootPart.CFrame * CFrame.new(math.random(-Range, Range), math.random(-Range, Range), -3) * rotation
+					SparkPart.CFrame = SparkPart.CFrame * CFrame.Angles(0,0,0)
+
+					local result,SparkPositionFinal = RaycastSomething(SparkPart.Position,(SparkPart.CFrame * CFrame.new(0,0,-100)).Position,100,{Character,workspace.Effects})
+					
+					local StartPosition = SparkPart.Position
+					SparkPart.Position = SparkPositionFinal
+
+					TS:Create(SparkPart,TweenInfo.new(0.5),{Position = StartPosition,Size = SparkPart.Size + Vector3.new(0,0,5)}):Play()
+					delay(0.4, function()
+						TS:Create(SparkPart,TweenInfo.new(0.1),{Transparency = 1}):Play()
+					end)
+				end
+			end
+			
+			local Ring = game.ServerStorage.GameEffects.Gravity["Gravity Attract"].GravityRing:Clone()
+			
+			local rotation = Ring.CFrame - Ring.Position
+			Ring.CFrame = HumanoidRootPart.CFrame * CFrame.new(0,0,-4) * rotation
+			Ring.CFrame = Ring.CFrame * CFrame.Angles(1.5,0,0)
+			
+			Ring.Size = Vector3.new(50,0.5,50)
+			Ring.Parent = Folder
+			
+			TS:Create(Ring,TweenInfo.new(1),{Size = Vector3.new(0,0,0)}):Play()
+			delay(0.9, function()
+				TS:Create(Ring,TweenInfo.new(0.1),{Transparency = 1}):Play()
+			end)
+			
+			local HitboxPart = Instance.new("Part",Folder)
+			HitboxPart.Anchored = true
+			HitboxPart.CanCollide = false
+			HitboxPart.Transparency = 1
+			HitboxPart.CFrame = HumanoidRootPart.CFrame
+			HitboxPart.Position = (HumanoidRootPart.Position+PositionToLook)/2
+			
+			local Magnitude = (HumanoidRootPart.Position - PositionToLook).Magnitude
+			
+			HitboxPart.Size = Vector3.new(5,5,Magnitude)
+			
+			local Hitbox = PartToRegion3(HitboxPart)
+			
+			local PartsInRegion3 = Hitbox:FindPartsInRegion3WithIgnoreList({Character,workspace.Effects},math.huge)
+			local AlreadyHit = {}
+			
+			for _, part in pairs(PartsInRegion3) do
+				if part.Parent:FindFirstChild("Humanoid") and table.find(AlreadyHit,part.Parent.Name) == nil then
+					table.insert(AlreadyHit,#AlreadyHit+1,part.Parent.Name)
+					part.Parent:FindFirstChild("Humanoid"):TakeDamage(10)
+					game.ReplicatedStorage.HitCounter.HitCounterEvent:FireClient(Player)
+					
+					local humanoid = part.Parent:FindFirstChild("Humanoid")
+					
+					for i,v in pairs(humanoid.Parent:GetDescendants()) do
+						if v:IsA("Motor6D") and v.Parent.Name ~= "HumanoidRootPart" then
+							local Socket = Instance.new("BallSocketConstraint")
+							local a1 = Instance.new("Attachment")
+							local a2 = Instance.new("Attachment")
+							a1.Parent = v.Part0
+							a2.Parent = v.Part1
+							Socket.Parent = v.Parent
+							Socket.Attachment0 = a1
+							Socket.Attachment1 = a2
+							a1.CFrame = v.C0
+							a2.CFrame = v.C1
+							Socket.LimitsEnabled = true
+							Socket.TwistLimitsEnabled = true
+							v:Destroy()
+						end
+					end
+					humanoid.RequiresNeck = false
+					humanoid.Sit = true
+					local JumpPower = humanoid.JumpPower
+					humanoid.JumpPower = 0
+					
+					local Distance = (part.Parent:FindFirstChild("HumanoidRootPart").Position - HumanoidRootPart.Position).Magnitude
+					
+					local BodyVelocity = Instance.new("BodyVelocity",humanoid.Parent.HumanoidRootPart)
+					BodyVelocity.Velocity = -HumanoidRootPart.CFrame.lookVector * Distance
+					game.Debris:AddItem(BodyVelocity,1)
+
+					delay(5, function()
+						for i,v in pairs(humanoid.Parent:GetDescendants()) do
+							if v:IsA("BallSocketConstraint") then
+								v.UpperAngle = 0
+								v.TwistUpperAngle = 0
+								v.TwistLowerAngle = 0
+								local Joints = Instance.new("Motor6D",v.Parent)
+								Joints.Part0 = v.Attachment0.Parent
+								Joints.Part1 = v.Attachment1.Parent
+								Joints.C0 = v.Attachment0.CFrame
+								Joints.C1 = v.Attachment1.CFrame
+								v:Destroy()
+							end
+						end
+						humanoid.Sit = false
+						humanoid.JumpPower = JumpPower
+					end)
+					
+				end
+			end
+			
+			local FinishMoveValue = Instance.new("BoolValue",Player)
+			FinishMoveValue.Name = InfoMove.MoveName.." FinishMove"
+			game.Debris:AddItem(FinishMoveValue,0.5)
+			game.Debris:AddItem(Folder,1.5)
+		end
+	end
+end)
